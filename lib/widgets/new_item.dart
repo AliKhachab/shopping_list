@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shopping_list/data/categories.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:shopping_list/models/category.dart';
+import 'package:shopping_list/models/grocery_item.dart';
 
 class NewItem extends StatefulWidget {
   const NewItem({super.key});
@@ -20,8 +21,14 @@ class _NewItemState extends State<NewItem> {
   void _saveItem() {
     
     // take the form, check the state, and check if any fields are invalid. we need to put ! b/c what if state is null? in our case it won't ever be null because the form will always be there when this method is called
-    if (!_formKey.currentState!.validate()) {
-      _formKey.currentState?.save(); // saves the form state, triggering onSaved callbacks if any
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save(); 
+      Navigator.of(context).pop(GroceryItem(
+        id: DateTime.now().toString(), 
+        name: _enteredName,
+        quantity: _enteredQuantity,
+        category: _selectedCategory,
+      ));
     }
   }
 
