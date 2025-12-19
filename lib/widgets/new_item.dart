@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shopping_list/data/categories.dart';
-import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
+//import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:shopping_list/models/category.dart';
 import 'package:shopping_list/models/grocery_item.dart';
 import 'dart:convert'; // for json encoding
@@ -15,13 +15,18 @@ class NewItem extends StatefulWidget {
 
 @override
 class _NewItemState extends State<NewItem> {
-  final _formKey = GlobalKey<FormState>(); // instead of using controllers, we use a form key to manage form state
+  final _formKey =
+      GlobalKey<
+        FormState
+      >(); // instead of using controllers, we use a form key to manage form state
   var _enteredName = '';
   var _enteredQuantity = 1;
   var _selectedCategory = categories[Categories.vegetables]!;
-
+  var _isSending = false;
   void _saveItem() async {
-    
+    setState(() {
+      _isSending = true;
+    });
     // take the form, check the state, and check if any fields are invalid. we need to put ! b/c what if state is null? in our case it won't ever be null because the form will always be there when this method is called
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -38,9 +43,8 @@ class _NewItemState extends State<NewItem> {
           'category': _selectedCategory.name,
         }),
       );
-      final Map<String,dynamic> responseData = json.decode(response.body);
-      if(!context.mounted)
-      {
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (!context.mounted) {
         return;
       }
       Navigator.of(context).pop(
@@ -49,7 +53,7 @@ class _NewItemState extends State<NewItem> {
           name: _enteredName,
           quantity: _enteredQuantity,
           category: _selectedCategory,
-        )
+        ),
       );
     }
   }
@@ -108,7 +112,7 @@ class _NewItemState extends State<NewItem> {
                         if (value == null ||
                             int.tryParse(value) == null ||
                             int.parse(value) <= 0) {
-                              return 'Please enter a valid positive number.';
+                          return 'Please enter a valid positive number.';
                         }
                         return null;
                       },
@@ -152,11 +156,24 @@ class _NewItemState extends State<NewItem> {
                 children: [
                   TextButton(
                     onPressed: () {
-                      _formKey.currentState!.reset();
+                      _isSending
+                          ? null
+                          : () {
+                              _formKey.currentState!.reset();
+                            };
                     },
                     child: Text("Reset"),
                   ),
-                  ElevatedButton(onPressed: _saveItem, child: Text("Add Item")),
+                  ElevatedButton(
+                    onPressed: _isSending ? null : _saveItem,
+                    child: _isSending
+                        ? SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(),
+                          )
+                        : Text("Add Item"),
+                  ),
                 ],
               ),
             ],
