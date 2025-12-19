@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "834114860032",
+    "project_id": "itec315shoppinglist",
+    "storage_bucket": "itec315shoppinglist.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:834114860032:android:1c47d5b85bbb81194c54e5",
+        "android_client_info": {
+          "package_name": "com.example.shopping_list"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA19kGIOYGCQcGyuGL_PmmNSoBzD-Li8n4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
