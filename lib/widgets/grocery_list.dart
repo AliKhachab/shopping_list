@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shopping_list/models/grocery_item.dart';
 import 'package:shopping_list/widgets/new_item.dart';
-import 'dart:convert'; 
+import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shopping_list/data/categories.dart';
 
@@ -14,7 +14,8 @@ class GroceryList extends StatefulWidget {
 
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItems = [];
-  var isLoading = true;
+  var _isLoading = true;
+  String? error = "";
   @override
   void initState() {
     super.initState();
@@ -27,18 +28,26 @@ class _GroceryListState extends State<GroceryList> {
       'shopping-list.json',
     );
     final response = await http.get(url);
+    if (response.statusCode >= 400) {
+      setState(() {
+        error =
+            "An error occurred while loading your grocery list. Please try again later.";
+      });
+    }
     final Map<String, dynamic>? listData = json.decode(response.body);
     if (listData == null) {
       setState(() {
-        isLoading = false;
+        _isLoading = false;
       });
       return;
     }
     final List<GroceryItem> loadedItems = [];
     for (final item in listData.entries) {
       final category = categories.entries
-          .firstWhere( // function that finds the first element that matches the condition, here, we are using this to find the category that matches the category name stored in the database and assigning it to the grocery item so that we can use its color property later
-              (catItem) => catItem.value.name == item.value['category'])
+          .firstWhere(
+            // function that finds the first element that matches the condition, here, we are using this to find the category that matches the category name stored in the database and assigning it to the grocery item so that we can use its color property later
+            (catItem) => catItem.value.name == item.value['category'],
+          )
           .value;
       loadedItems.add(
         GroceryItem(
@@ -51,7 +60,7 @@ class _GroceryListState extends State<GroceryList> {
     }
     setState(() {
       _groceryItems = loadedItems;
-      isLoading = false;
+      _isLoading = false;
     });
   }
 
@@ -68,13 +77,25 @@ class _GroceryListState extends State<GroceryList> {
     }
   }
 
-  void _removeItem(String id) {
+  void _removeItem(String id) async {
     int groceryIdx = _groceryItems.indexWhere((item) => item.id == id);
     final removedItem = _groceryItems[groceryIdx];
     setState(() {
       _groceryItems.removeAt(groceryIdx);
     });
-        ScaffoldMessenger.of(context).clearSnackBars();
+    final url = Uri.https(
+      'itec315shoppinglist-default-rtdb.firebaseio.com',
+      'shopping-list/$id.json',
+    );
+    var response = await http.delete(url);
+    if (response.statusCode >= 400) {
+      setState(() {
+        _groceryItems.insert(groceryIdx, removedItem);
+      });
+      return;
+    }
+
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Grocery item deleted."),
@@ -83,8 +104,17 @@ class _GroceryListState extends State<GroceryList> {
           label: "Undo",
           onPressed: () {
             setState(() {
-              _groceryItems.add(removedItem);
+              _groceryItems.insert(groceryIdx, removedItem); // add back to list locally
             });
+            // push back to database
+            http.put(
+              url,
+              body: json.encode({
+                'name': removedItem.name,
+                'quantity': removedItem.quantity,
+                'category': removedItem.category.name,
+              }),
+            );
           },
         ),
       ),
@@ -93,12 +123,11 @@ class _GroceryListState extends State<GroceryList> {
 
   @override
   Widget build(BuildContext context) {
-
-    Widget content = const Center(child: Text("You have no groceries. Press the + button to add some."));
-    if (isLoading) {
-      content = const Center(
-        child: CircularProgressIndicator(),
-      );
+    Widget content = const Center(
+      child: Text("You have no groceries. Press the + button to add some."),
+    );
+    if (_isLoading) {
+      content = const Center(child: CircularProgressIndicator());
     }
     if (_groceryItems.isNotEmpty) {
       content = ListView.builder(
@@ -126,7 +155,6 @@ class _GroceryListState extends State<GroceryList> {
       ),
       body: content,
     );
-
   }
 }
 
