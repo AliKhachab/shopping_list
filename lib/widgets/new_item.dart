@@ -3,6 +3,8 @@ import 'package:shopping_list/data/categories.dart';
 import 'package:flutter_platform_widgets/flutter_platform_widgets.dart';
 import 'package:shopping_list/models/category.dart';
 import 'package:shopping_list/models/grocery_item.dart';
+import 'dart:convert'; // for json encoding
+import 'package:http/http.dart' as http; // for making http requests
 
 class NewItem extends StatefulWidget {
   const NewItem({super.key});
@@ -18,17 +20,37 @@ class _NewItemState extends State<NewItem> {
   var _enteredQuantity = 1;
   var _selectedCategory = categories[Categories.vegetables]!;
 
-  void _saveItem() {
+  void _saveItem() async {
     
     // take the form, check the state, and check if any fields are invalid. we need to put ! b/c what if state is null? in our case it won't ever be null because the form will always be there when this method is called
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save(); 
-      Navigator.of(context).pop(GroceryItem(
-        id: DateTime.now().toString(), 
-        name: _enteredName,
-        quantity: _enteredQuantity,
-        category: _selectedCategory,
-      ));
+      _formKey.currentState!.save();
+      final url = Uri.https(
+        'flutter-shopping-list-3157f-default-rtdb.firebaseio.com',
+        'shopping-list.json',
+      );
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'name': _enteredName,
+          'quantity': _enteredQuantity,
+          'category': _selectedCategory.name,
+        }),
+      );
+      final Map<String,dynamic> responseData = json.decode(response.body);
+      if(!context.mounted)
+      {
+        return;
+      }
+      Navigator.of(context).pop(
+        GroceryItem(
+          id: responseData['name'],
+          name: _enteredName,
+          quantity: _enteredQuantity,
+          category: _selectedCategory,
+        )
+      );
     }
   }
 
