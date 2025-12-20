@@ -56,6 +56,9 @@ class _NewItemState extends State<NewItem> {
         ),
       );
     }
+    setState(() {
+      _isSending = false;
+    });
   }
 
   // void _showDialog(String message) {
@@ -155,12 +158,11 @@ class _NewItemState extends State<NewItem> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () {
+                    onPressed:
                       _isSending
                           ? null
                           : () {
-                              _formKey.currentState!.reset();
-                            };
+                              _formKey.currentState!.reset(); 
                     },
                     child: Text("Reset"),
                   ),
